@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  berry-cms:
+    build: .
+    container_name: berry-cms-app
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - REDIS_URL=redis://redis-cache:6379
+    depends_on:
+      - redis-cache
+    restart: unless-stopped
+    networks:
+      - berry-net
+
+  redis-cache:
+    image: redis:7-alpine
+    container_name: berry-cms-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - berry_redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
+    networks:
+      - berry-net
+
+volumes:
+  berry_redis_data:
+
+networks:
+  berry-net:
+    driver: bridge
