@@ -14,16 +14,29 @@ import { Redis as UpstashRedis } from '@upstash/redis';
  * tanpa perlu tahu implementasi driver di baliknya.
  */
 
-const useUpstash = Boolean(
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-);
+const clean = (v) => (v || '').trim().replace(/^["']|["']$/g, '').trim();
+
+let upstashUrl = clean(process.env.UPSTASH_REDIS_REST_URL);
+const upstashToken = clean(process.env.UPSTASH_REDIS_REST_TOKEN);
+
+if (/^rediss?:\/\//i.test(upstashUrl)) {
+  throw new Error(
+    'UPSTASH_REDIS_REST_URL harus berupa URL REST (https://xxxx.upstash.io), bukan URL TCP redis://. ' +
+      'Ambil dari Upstash Console > database > bagian REST API.'
+  );
+}
+if (upstashUrl && !/^https?:\/\//i.test(upstashUrl)) {
+  upstashUrl = `https://${upstashUrl}`;
+}
+
+const useUpstash = Boolean(upstashUrl && upstashToken);
 
 let raw;
 
 if (useUpstash) {
   raw = new UpstashRedis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    url: upstashUrl,
+    token: upstashToken,
     automaticDeserialization: false,
   });
 } else {
